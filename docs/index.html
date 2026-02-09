@@ -19,6 +19,8 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             transition: background 1s ease-in-out;
+            overflow: hidden;
+            position: relative;
         }
 
         .clock-container {
@@ -164,9 +166,216 @@
                 font-size: 1.2rem;
             }
         }
+
+        /* Weather visualization styles */
+        .weather-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .clock-container {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sun */
+        .sun {
+            position: absolute;
+            top: 5%;
+            right: 10%;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+            animation: sunGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes sunGlow {
+            0%, 100% { box-shadow: 0 0 60px rgba(255, 215, 0, 0.8); }
+            50% { box-shadow: 0 0 80px rgba(255, 215, 0, 1); }
+        }
+
+        /* Moon */
+        .moon {
+            position: absolute;
+            top: 10%;
+            right: 10%;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #FFFACD 0%, #F0F8FF 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 40px rgba(255, 250, 205, 0.6), inset -15px -15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.8;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.1));
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+        }
+
+        .cloud-small {
+            width: 50px;
+            height: 25px;
+            top: 15%;
+            left: 10%;
+        }
+
+        .cloud-small::before {
+            width: 25px;
+            height: 25px;
+            top: -12px;
+            left: 5px;
+        }
+
+        .cloud-small::after {
+            width: 20px;
+            height: 20px;
+            top: -8px;
+            right: 8px;
+        }
+
+        .cloud-medium {
+            width: 70px;
+            height: 30px;
+            top: 25%;
+            left: 20%;
+        }
+
+        .cloud-medium::before {
+            width: 35px;
+            height: 35px;
+            top: -15px;
+            left: 8px;
+        }
+
+        .cloud-medium::after {
+            width: 25px;
+            height: 25px;
+            top: -10px;
+            right: 12px;
+        }
+
+        .cloud-large {
+            width: 100px;
+            height: 40px;
+            top: 30%;
+            right: 15%;
+        }
+
+        .cloud-large::before {
+            width: 45px;
+            height: 45px;
+            top: -20px;
+            left: 12px;
+        }
+
+        .cloud-large::after {
+            width: 35px;
+            height: 35px;
+            top: -15px;
+            right: 15px;
+        }
+
+        /* Raindrop animation */
+        @keyframes raindrop-fall {
+            to {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        .raindrops {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .raindrop {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+            animation: raindrop-fall linear infinite;
+        }
+
+        /* Snowflake animation */
+        @keyframes snowfall {
+            to {
+                transform: translateY(100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        .snowflakes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 1.5em;
+            opacity: 0.8;
+            animation: snowfall linear infinite;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Lightning animation */
+        @keyframes lightning-strike {
+            0%, 100% {
+                opacity: 0;
+            }
+            10%, 15% {
+                opacity: 1;
+            }
+            20%, 100% {
+                opacity: 0;
+            }
+        }
+
+        .lightning {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3), transparent);
+            animation: lightning-strike 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .lightning-bolt {
+            position: absolute;
+            width: 3px;
+            height: 200px;
+            background: linear-gradient(to bottom, #FFFF00, #FFF, transparent);
+            left: 30%;
+            top: 10%;
+            filter: blur(1px);
+            animation: lightning-strike 4s ease-in-out infinite;
+            box-shadow: 0 0 20px #FFFF00;
+        }
     </style>
 </head>
 <body>
+    <div class="weather-container" id="weatherContainer"></div>
+    
     <div class="clock-container">
         <div class="city-name" id="cityName"></div>
         <div class="clock" id="time">00:00:00 AM</div>
@@ -282,6 +491,99 @@
             }
             
             document.body.style.background = backgroundGradients[gradientKey];
+            renderWeatherVisuals(gradientKey);
+        }
+
+        function renderWeatherVisuals(weatherType) {
+            const container = document.getElementById('weatherContainer');
+            container.innerHTML = '';
+
+            if (weatherType === 'sunny') {
+                container.innerHTML = '<div class="sun"></div>';
+            } else if (weatherType === 'partlyCloudy') {
+                container.innerHTML = `
+                    <div class="sun"></div>
+                    <div class="cloud cloud-small"></div>
+                    <div class="cloud cloud-medium" style="top: 20%; left: 60%;"></div>
+                `;
+            } else if (weatherType === 'cloudy') {
+                container.innerHTML = `
+                    <div class="cloud cloud-small" style="top: 10%; left: 5%;"></div>
+                    <div class="cloud cloud-medium" style="top: 20%; left: 15%;"></div>
+                    <div class="cloud cloud-large" style="top: 15%; right: 5%;"></div>
+                    <div class="cloud cloud-medium" style="top: 35%; left: 50%;"></div>
+                    <div class="cloud cloud-small" style="top: 40%; right: 20%;"></div>
+                `;
+            } else if (weatherType === 'rainy') {
+                container.innerHTML = `
+                    <div class="cloud cloud-large" style="top: 5%; left: 10%;"></div>
+                    <div class="cloud cloud-large" style="top: 10%; right: 5%;"></div>
+                    <div class="raindrops" id="rainContainer"></div>
+                `;
+                createRaindrops();
+            } else if (weatherType === 'snowy') {
+                container.innerHTML = `
+                    <div class="cloud cloud-large" style="top: 5%; left: 10%; opacity: 0.9;"></div>
+                    <div class="cloud cloud-large" style="top: 10%; right: 5%; opacity: 0.9;"></div>
+                    <div class="snowflakes" id="snowContainer"></div>
+                `;
+                createSnowflakes();
+            } else if (weatherType === 'thunderstorm') {
+                container.innerHTML = `
+                    <div class="cloud cloud-large" style="top: 5%; left: 10%;"></div>
+                    <div class="cloud cloud-large" style="top: 10%; right: 5%;"></div>
+                    <div class="lightning"></div>
+                    <div class="lightning-bolt"></div>
+                    <div class="raindrops" id="rainContainer"></div>
+                `;
+                createRaindrops();
+            } else if (weatherType === 'night') {
+                container.innerHTML = '<div class="moon"></div>';
+            }
+        }
+
+        function createRaindrops() {
+            const rainContainer = document.getElementById('rainContainer');
+            if (!rainContainer) return;
+            
+            for (let i = 0; i < 100; i++) {
+                const raindrop = document.createElement('div');
+                raindrop.className = 'raindrop';
+                const leftPosition = Math.random() * 100;
+                const animationDuration = 0.5 + Math.random() * 0.5;
+                const animationDelay = Math.random() * 2;
+                
+                raindrop.style.left = leftPosition + '%';
+                raindrop.style.top = '-10px';
+                raindrop.style.animationDuration = animationDuration + 's';
+                raindrop.style.animationDelay = animationDelay + 's';
+                
+                rainContainer.appendChild(raindrop);
+            }
+        }
+
+        function createSnowflakes() {
+            const snowContainer = document.getElementById('snowContainer');
+            if (!snowContainer) return;
+            
+            for (let i = 0; i < 50; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                snowflake.textContent = '❄';
+                const leftPosition = Math.random() * 100;
+                const animationDuration = 5 + Math.random() * 5;
+                const animationDelay = Math.random() * 5;
+                const size = 1 + Math.random() * 2;
+                
+                snowflake.style.left = leftPosition + '%';
+                snowflake.style.top = '-20px';
+                snowflake.style.animationDuration = animationDuration + 's';
+                snowflake.style.animationDelay = animationDelay + 's';
+                snowflake.style.fontSize = size + 'em';
+                snowflake.style.opacity = 0.4 + Math.random() * 0.6;
+                
+                snowContainer.appendChild(snowflake);
+            }
         }
 
         async function fetchWeatherForCity(latitude, longitude) {
