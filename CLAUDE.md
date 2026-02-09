@@ -11,11 +11,13 @@ A standalone HTML page displaying current time with a responsive gradient backgr
 
 ## Running the Project
 
-Open `timer.html` in any modern web browser. No build process, bundlers, or dependencies required.
+Open `archive/timer.html` in any modern web browser for local testing. No build process, bundlers, or dependencies required.
 
 ## Project Structure
 
-- `timer.html` - Single-file application containing CSS, HTML, and JavaScript
+- `docs/index.html` - Main application (published via GitHub Pages)
+- `archive/timer.html` - Local copy for development/testing
+- `docs/.nojekyll` - GitHub Pages configuration
   - CSS styles embedded in `<style>` tags
   - JavaScript logic embedded in `<script>` tags
 
