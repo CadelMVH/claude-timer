@@ -18,6 +18,7 @@
             align-items: center;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background 1s ease-in-out;
         }
 
         .clock-container {
@@ -53,6 +54,103 @@
             margin-top: 2rem;
         }
 
+        .city-name {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            color: #4facfe;
+        }
+
+        .search-container {
+            margin-top: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            border: 2px solid #4facfe;
+            border-radius: 5px;
+            background-color: rgba(79, 172, 254, 0.1);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #fff;
+            background-color: rgba(79, 172, 254, 0.2);
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            background-color: #4facfe;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-button:hover {
+            background-color: #3190d9;
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+        }
+
+        .search-results {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .result-item {
+            padding: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+        }
+
+        .result-item:hover {
+            background-color: rgba(79, 172, 254, 0.3);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .reset-button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            background-color: #888;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+        }
+
+        .reset-button:hover {
+            background-color: #666;
+            box-shadow: 0 0 15px rgba(136, 136, 136, 0.5);
+        }
+
         @media (max-width: 600px) {
             .clock {
                 font-size: 3.5rem;
@@ -70,36 +168,275 @@
 </head>
 <body>
     <div class="clock-container">
+        <div class="city-name" id="cityName"></div>
         <div class="clock" id="time">00:00:00 AM</div>
         <div class="date" id="date"></div>
         <div class="greeting" id="greeting"></div>
+        
+        <div class="search-container">
+            <input 
+                type="text" 
+                class="search-input" 
+                id="citySearch" 
+                placeholder="Search for a city..."
+                autocomplete="off"
+            >
+            <button class="search-button" id="searchBtn">Search</button>
+            <button class="reset-button" id="resetBtn">Local Time</button>
+        </div>
+        
+        <div class="search-results" id="searchResults"></div>
     </div>
 
     <script>
-        function updateTime() {
-            const now = new Date();
+        let currentTimezone = null;
+        let currentCityName = null;
 
-            // Get time components
-            let hours = now.getHours();
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
+        const backgroundGradients = {
+            clear: 'linear-gradient(135deg, #1a5f7a 0%, #087a96 50%, #0a99b5 100%)',
+            sunny: 'linear-gradient(135deg, #ff9a56 0%, #ff8c42 50%, #ff6b35 100%)',
+            partlyCloudy: 'linear-gradient(135deg, #5a8ba3 0%, #3d6b8f 50%, #2b4f6f 100%)',
+            cloudy: 'linear-gradient(135deg, #4a5f6f 0%, #36495f 50%, #2a3a4f 100%)',
+            overcast: 'linear-gradient(135deg, #3a4a5a 0%, #2a3a4a 50%, #1a2a3a 100%)',
+            rainy: 'linear-gradient(135deg, #1f2937 0%, #374151 50%, #4b5563 100%)',
+            snowy: 'linear-gradient(135deg, #e0f4ff 0%, #b3e0ff 50%, #80d4ff 100%)',
+            thunderstorm: 'linear-gradient(135deg, #1a1a2e 0%, #4a2a4e 50%, #1a1a2e 100%)',
+            night: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)'
+        };
+
+        // Timezone map for major locations
+        const timezoneMap = {
+            'New York': 'America/New_York',
+            'Los Angeles': 'America/Los_Angeles',
+            'Chicago': 'America/Chicago',
+            'Denver': 'America/Denver',
+            'Toronto': 'America/Toronto',
+            'Vancouver': 'America/Vancouver',
+            'Mexico City': 'America/Mexico_City',
+            'São Paulo': 'America/Sao_Paulo',
+            'London': 'Europe/London',
+            'Paris': 'Europe/Paris',
+            'Berlin': 'Europe/Berlin',
+            'Madrid': 'Europe/Madrid',
+            'Rome': 'Europe/Rome',
+            'Moscow': 'Europe/Moscow',
+            'Istanbul': 'Europe/Istanbul',
+            'Cairo': 'Africa/Cairo',
+            'Lagos': 'Africa/Lagos',
+            'Johannesburg': 'Africa/Johannesburg',
+            'Dubai': 'Asia/Dubai',
+            'Mumbai': 'Asia/Kolkata',
+            'Bangkok': 'Asia/Bangkok',
+            'Singapore': 'Asia/Singapore',
+            'Hong Kong': 'Asia/Hong_Kong',
+            'Tokyo': 'Asia/Tokyo',
+            'Seoul': 'Asia/Seoul',
+            'Beijing': 'Asia/Shanghai',
+            'Sydney': 'Australia/Sydney',
+            'Auckland': 'Pacific/Auckland'
+        };
+
+        function getTimezoneForCity(latitude, longitude) {
+            // Try to match based on known cities first
+            for (const [city, tz] of Object.entries(timezoneMap)) {
+                const cityTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                // For most cases, we'll use the API's timezone
+                return null; // Let the API determine timezone
+            }
+            return null;
+        }
+
+        function setBackground(condition) {
+            let gradientKey = 'night';
             
+            if (condition) {
+                const conditionLower = condition.toLowerCase();
+                if (conditionLower.includes('clear') || conditionLower.includes('sunny')) {
+                    gradientKey = 'sunny';
+                } else if (conditionLower.includes('partly cloudy') || conditionLower.includes('partly') && conditionLower.includes('cloud')) {
+                    gradientKey = 'partlyCloudy';
+                } else if (conditionLower.includes('cloudy') || conditionLower.includes('overcast')) {
+                    gradientKey = 'cloudy';
+                } else if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
+                    gradientKey = 'rainy';
+                } else if (conditionLower.includes('snow')) {
+                    gradientKey = 'snowy';
+                } else if (conditionLower.includes('thunderstorm') || conditionLower.includes('thunder')) {
+                    gradientKey = 'thunderstorm';
+                }
+            } else {
+                // Determine if it's night based on current hour
+                const hourFormatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: currentTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    hour12: false,
+                    hour: '2-digit'
+                });
+                const hour = parseInt(hourFormatter.format(new Date()));
+                if (hour >= 20 || hour < 6) {
+                    gradientKey = 'night';
+                } else if (hour >= 6 && hour < 12) {
+                    gradientKey = 'sunny';
+                } else {
+                    gradientKey = 'partlyCloudy';
+                }
+            }
+            
+            document.body.style.background = backgroundGradients[gradientKey];
+        }
+
+        async function fetchWeatherForCity(latitude, longitude) {
+            try {
+                const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=weather_code,is_day&timezone=auto`);
+                const data = await response.json();
+                
+                const weatherCode = data.current.weather_code;
+                const isDay = data.current.is_day;
+                
+                // WMO Weather interpretation codes
+                const weatherDescription = getWeatherDescription(weatherCode, isDay);
+                setBackground(weatherDescription);
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                setBackground(null);
+            }
+        }
+
+        function getWeatherDescription(code, isDay) {
+            const weatherCodes = {
+                0: 'clear',
+                1: 'partly cloudy',
+                2: 'cloudy',
+                3: 'overcast',
+                45: 'foggy',
+                48: 'foggy',
+                51: 'drizzle',
+                53: 'drizzle',
+                55: 'drizzle',
+                61: 'rain',
+                63: 'rain',
+                65: 'rain',
+                71: 'snow',
+                73: 'snow',
+                75: 'snow',
+                77: 'snow',
+                80: 'rainy',
+                81: 'rainy',
+                82: 'rainy',
+                85: 'snow',
+                86: 'snow',
+                95: 'thunderstorm',
+                96: 'thunderstorm',
+                99: 'thunderstorm'
+            };
+            
+            const description = weatherCodes[code] || 'clear';
+            return isDay === 0 ? 'night' : description;
+        }
+
+        async function geocodeCity(cityName) {
+            try {
+                const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`);
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    const result = data.results[0];
+                    return {
+                        latitude: result.latitude,
+                        longitude: result.longitude,
+                        timezone: result.timezone
+                    };
+                }
+            } catch (error) {
+                console.error('Error geocoding city:', error);
+            }
+            return null;
+        }
+
+        async function searchCities(query) {
+            const results = document.getElementById('searchResults');
+            if (!query.trim()) {
+                results.classList.remove('show');
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`);
+                const data = await response.json();
+
+                if (!data.results || data.results.length === 0) {
+                    results.innerHTML = '<div style="padding: 1rem; text-align: center; opacity: 0.7;">No cities found</div>';
+                    results.classList.add('show');
+                    return;
+                }
+
+                results.innerHTML = data.results.map(city => {
+                    const countryName = city.country ? `, ${city.country}` : '';
+                    const adminName = city.admin1 ? `, ${city.admin1}` : '';
+                    const displayName = `${city.name}${adminName}${countryName}`;
+                    return `
+                        <div class="result-item" onclick="selectCityFromSearch('${city.name}', '${city.timezone}', '${city.latitude}', '${city.longitude}')">
+                            ${displayName}
+                        </div>
+                    `;
+                }).join('');
+                results.classList.add('show');
+            } catch (error) {
+                console.error('Error searching cities:', error);
+                results.innerHTML = '<div style="padding: 1rem; text-align: center; opacity: 0.7;">Error searching cities</div>';
+                results.classList.add('show');
+            }
+        }
+
+        function selectCityFromSearch(cityName, timezone, latitude, longitude) {
+            selectCity(cityName, timezone, latitude, longitude);
+        }
+
+        function updateTime() {
+            const options = {
+                timeZone: currentTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const parts = formatter.formatToParts(new Date());
+
+            let hours = parseInt(parts.find(p => p.type === 'hour').value);
+            const minutes = parts.find(p => p.type === 'minute').value;
+            const seconds = parts.find(p => p.type === 'second').value;
+
             // Convert to 12-hour format
             const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
-            hours = hours ? hours : 12; // The hour '0' should be '12'
+            hours = hours ? hours : 12;
             const hours12 = String(hours).padStart(2, '0');
 
-            // Get date components
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const dateString = now.toLocaleDateString('en-US', options);
+            // Get date
+            const dateOptions = { 
+                timeZone: currentTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const dateFormatter = new Intl.DateTimeFormat('en-US', dateOptions);
+            const dateString = dateFormatter.format(new Date());
 
             // Update the DOM
             document.getElementById('time').textContent = hours12 + ':' + minutes + ':' + seconds + ' ' + ampm;
             document.getElementById('date').textContent = dateString;
 
+            // Update city name
+            if (currentCityName) {
+                document.getElementById('cityName').textContent = currentCityName;
+            } else {
+                document.getElementById('cityName').textContent = '';
+            }
+
             // Update greeting
-            const hour = now.getHours();
+            const hour = parseInt(parts.find(p => p.type === 'hour').value);
             let greeting = 'Good';
             if (hour < 12) greeting = 'Good morning';
             else if (hour < 17) greeting = 'Good afternoon';
@@ -107,9 +444,69 @@
             document.getElementById('greeting').textContent = greeting + ', it\'s currently ' + hours12 + ':' + minutes + ' ' + ampm;
         }
 
+        function selectCity(cityName, timezone, latitude, longitude) {
+            currentCityName = cityName;
+            currentTimezone = timezone;
+            document.getElementById('citySearch').value = '';
+            document.getElementById('searchResults').classList.remove('show');
+            updateTime();
+            
+            // Fetch weather for the city
+            fetchWeatherForCity(latitude, longitude);
+        }
+
+        function resetToLocalTime() {
+            currentTimezone = null;
+            currentCityName = null;
+            document.getElementById('citySearch').value = '';
+            document.getElementById('searchResults').classList.remove('show');
+            updateTime();
+            setBackground(null);
+        }
+
+        // Event listeners
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const query = document.getElementById('citySearch').value;
+            searchCities(query);
+        });
+
+        document.getElementById('citySearch').addEventListener('input', (e) => {
+            searchCities(e.target.value);
+        });
+
+        document.getElementById('citySearch').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                searchCities(e.target.value);
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', resetToLocalTime);
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            const searchInput = document.getElementById('citySearch');
+            const searchResults = document.getElementById('searchResults');
+            if (!e.target.closest('.search-container') && !e.target.closest('.search-results')) {
+                searchResults.classList.remove('show');
+            }
+        });
+
         // Update immediately and then every second
         updateTime();
         setInterval(updateTime, 1000);
+        
+        // Update background every 10 minutes for weather changes
+        setInterval(() => {
+            if (currentCityName) {
+                geocodeCity(currentCityName).then(coords => {
+                    if (coords) {
+                        fetchWeatherForCity(coords.latitude, coords.longitude);
+                    }
+                });
+            } else {
+                setBackground(null);
+            }
+        }, 600000); // 10 minutes
     </script>
 </body>
 </html>
