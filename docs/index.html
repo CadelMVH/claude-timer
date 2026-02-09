@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Current Time</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .clock-container {
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+
+        .clock {
+            font-size: 6rem;
+            font-weight: 300;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
+        }
+
+        .date {
+            font-size: 1.5rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .seconds {
+            font-size: 3rem;
+            font-weight: 200;
+            color: #4facfe;
+            text-shadow: 0 0 15px rgba(79, 172, 254, 0.5);
+        }
+
+        .greeting {
+            font-size: 1.2rem;
+            opacity: 0.7;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .clock {
+                font-size: 3.5rem;
+            }
+
+            .seconds {
+                font-size: 2rem;
+            }
+
+            .date {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="clock-container">
+        <div class="clock" id="time">00:00:00 AM</div>
+        <div class="date" id="date"></div>
+        <div class="greeting" id="greeting"></div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+
+            // Get time components
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // Convert to 12-hour format
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // The hour '0' should be '12'
+            const hours12 = String(hours).padStart(2, '0');
+
+            // Get date components
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = now.toLocaleDateString('en-US', options);
+
+            // Update the DOM
+            document.getElementById('time').textContent = hours12 + ':' + minutes + ':' + seconds + ' ' + ampm;
+            document.getElementById('date').textContent = dateString;
+
+            // Update greeting
+            const hour = now.getHours();
+            let greeting = 'Good';
+            if (hour < 12) greeting = 'Good morning';
+            else if (hour < 17) greeting = 'Good afternoon';
+            else greeting = 'Good evening';
+            document.getElementById('greeting').textContent = greeting + ', it\'s currently ' + hours12 + ':' + minutes + ' ' + ampm;
+        }
+
+        // Update immediately and then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
